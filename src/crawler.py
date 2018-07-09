@@ -2,7 +2,8 @@ from html.parser import HTMLParser
 from urllib.request import urlopen  
 from urllib import parse
 import re
-
+import time
+ 
 
 # We are going to create a class called LinkParser that inherits some
 # methods from HTMLParser which is why it is passed into the definition
@@ -66,18 +67,20 @@ class LinkParser(HTMLParser):
 			# Note that feed() handles Strings well, but not bytes
 			# (A change from Python 2.x to Python 3.x)
 			htmlString = htmlBytes.decode("utf-8")
+			title = htmlString[htmlString.index('"div-share"')+17:]
+			title = title[:title.index('"')]
 			htmlString = htmlString[htmlString.index("<div>")+5:]
 			htmlString = htmlString[:htmlString.index("</div>")]
 			htmlString = re.compile(r'<[^>]+>').sub('', htmlString)
 
 			self.feed(htmlString)
 			
-			return htmlString
+			return title, htmlString
 		else:
-			return ""
+			return title, ""
 
 
-def spider(url, word, maxPages):  
+def spider(url):  
 
 	parser = LinkParser()
 	band = url[url.rfind('/')+1:-5]
@@ -87,11 +90,18 @@ def spider(url, word, maxPages):
 	while len(links) > 0:
 		# Start from the beginning of our collection of pages to visit:
 		try:
-			data = parser.getLyrics(links[0])
+			print(links[0])
+			title, data = parser.getLyrics(links[0])
+			file.write(title)
 			file.write(data)
 			links = links[1:]
-			return		
+			time.sleep(1)
+			return
+			
 		except:
 			print(" **Failed!**")
-	
-spider('https://www.azlyrics.com/p/pearljam.html', 'alive', 1)
+			file.close()
+
+	file.close()
+
+spider('https://www.azlyrics.com/p/pearljam.html')
